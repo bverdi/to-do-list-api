@@ -1,0 +1,111 @@
+service: ${env:SERVICE_NAME}
+
+provider:
+  name: aws
+  runtime: nodejs10.x
+  region: us-east-1
+  stage: ${env:VERSION}
+  tracing: true
+  deploymentBucket: ${env:DEPLOYMENT_BUCKET}
+  apiGateway:
+    restApiId: 
+      'Fn::ImportValue': ${env:API_NAME}-${self:provider.stage}-restApiId
+    restApiRootResourceId:
+      'Fn::ImportValue': ${env:API_NAME}-${self:provider.stage}-rootResourceId
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - cloudwatch:*
+        - logs:*
+        - xray:*
+        - ses:*
+      Resource: "*"
+  environment:
+    NODE_ENV         : ${env:NODE_ENV}
+    LOG_INFO_ENABLE  : ${env:LOG_INFO_ENABLE}
+    LOG_ERROR_ENABLE : ${env:LOG_ERROR_ENABLE}
+    LOG_WARN_ENABLE  : ${env:LOG_WARN_ENABLE}
+    DB_TODO_DATABASE:              ${env:DB_TODO_DATABASE}
+    DB_TODO_USER:                  ${env:DB_TODO_USER}
+    DB_TODO_PASSWORD:              ${env:DB_TODO_PASSWORD}
+    DB_TODO_HOST:                  ${env:DB_TODO_HOST}
+    DB_TODO_PORT:                  ${env:DB_TODO_PORT}
+
+plugins:
+  - serverless-offline
+  - serverless-plugin-tracing
+
+custom:
+  serverless-offline:
+    apiKey: local
+    port: 3002
+
+functions:
+
+### Todos
+  getTodosById:
+    name: ${self:service}_get-todos-by-id_${self:provider.stage}
+    handler: src/controllers/todos/_handler.getTodosByIdRoute
+    description: Function to get an todo by id on todos
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: todos/{id}
+          method: GET
+          cors: true
+          private: true
+  
+  getAllTodos:
+    name: ${self:service}_get-all-todos_${self:provider.stage}
+    handler: src/controllers/todos/_handler.getAllTodosRoute
+    description: Function to get all todo on todos
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: todos
+          method: GET
+          cors: true
+          private: true
+
+  registerTodos:
+    name: ${self:service}_register-todos_${self:provider.stage}
+    handler: src/controllers/todos/_handler.registerTodosRoute
+    description: Function to register an todo on todos
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: todos
+          method: POST
+          cors: true
+          private: true
+
+  editTodos:
+    name: ${self:service}_edit-todos_${self:provider.stage}
+    handler: src/controllers/todos/_handler.editTodosRoute
+    description: Function to edit an todo on todos
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: todos/{id}
+          method: PUT
+          cors: true
+          private: true
+
+  deleteTodos:
+    name: ${self:service}_delete-todos_${self:provider.stage}
+    handler: src/controllers/todos/_handler.deleteTodosRoute
+    description: Function to delete an todo on todos
+    timeout: 30
+    memorySize: 256
+    events:
+      - http:
+          path: todos/{id}
+          method: DELETE
+          cors: true
+          private: true
+
+  
